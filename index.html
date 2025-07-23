@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: 'Montserrat', sans-serif;
+        padding: 20px;
+        background: #f8f9fb;
+        color: #111;
+        margin: 0;
+      }
+      h2 {
+        color: #16395f;
+        font-size: 22px;
+        margin-bottom: 10px;
+      }
+      label {
+        font-weight: 600;
+        margin-top: 10px;
+        display: block;
+      }
+      input, select {
+        font-size: 16px;
+        padding: 10px;
+        margin-bottom: 15px;
+        width: 100%;
+        max-width: 420px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+      }
+      .button-primary {
+        background-color: #16395f;
+        color: #fff;
+        font-weight: 600;
+        text-transform: uppercase;
+        border: none;
+        border-radius: 6px;
+        padding: 12px 20px;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background-color 0.2s;
+        width: 100%;
+        max-width: 420px;
+      }
+      .button-primary:hover {
+        background-color: #0e2a48;
+      }
+      .button-secondary {
+        background-color: #fff;
+        color: #16395f;
+        font-weight: 600;
+        text-transform: uppercase;
+        border: 2px solid #16395f;
+        border-radius: 6px;
+        padding: 12px 20px;
+        cursor: pointer;
+        margin-top: 20px;
+        display: inline-block;
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        text-decoration: none;
+      }
+      #results {
+        margin-top: 30px;
+      }
+      .summary-table {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 16px;
+        background-color: #fff;
+        margin-bottom: 30px;
+        max-width: 420px;
+      }
+      .summary-table table {
+        width: 100%;
+        font-size: 15px;
+      }
+      .summary-table td {
+        padding: 6px 0;
+      }
+      .summary-table td:last-child {
+        text-align: right;
+        font-weight: 600;
+      }
+      canvas {
+        max-width: 420px;
+        background: #fff;
+        border-radius: 10px;
+        padding: 10px;
+      }
+      .footnote {
+        font-size: 12px;
+        color: #666;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Calculadora de ahorro con Attestyr</h2>
+
+    <label for="monto">Monto de disputa:</label>
+    <input type="text" id="monto" placeholder="Ej. 100,000" value="100,000">
+
+    <label for="tipo">Tipo de disputa:</label>
+    <select id="tipo">
+      <option value="nacional">Nacional (MXN)</option>
+      <option value="internacional">Internacional (USD)</option>
+    </select>
+
+    <label for="mecanismo">Mecanismo:</label>
+    <select id="mecanismo">
+      <option value="arbitraje1">Arbitraje (1 árbitro)</option>
+      <option value="arbitraje3">Arbitraje (3 árbitros)</option>
+      <option value="mediacion">Mediación</option>
+      <option value="conciliacion">Conciliación</option>
+    </select>
+
+    <button class="button-primary" onclick="calcular()">CALCULAR AHORRO</button>
+
+    <div id="results">
+      <div class="summary-table" id="cotizacion"></div>
+      <canvas id="chart" style="max-height: 320px;"></canvas>
+      <p class="footnote">* Costos estimados antes de IVA. Última actualización 2025. Ahorros típicos de hasta 80% y reducción de tiempo de resolución en 5x.</p>
+      <a href="https://www.attestyr.com/contact" target="_blank" class="button-secondary">SOLICITAR COTIZACIÓN FORMAL</a>
+    </div>
+
+    <script>
+      document.getElementById("monto").addEventListener("keypress", function(e) {
+        if (e.key === 'Enter') calcular();
+      });
+
+      function parseMonto(input) {
+        return parseInt(input.replace(/,/g, '').replace(/\./g, '')) || 0;
+      }
+
+      function calcular() {
+        const tipo = document.getElementById("tipo").value;
+        const mecanismo = document.getElementById("mecanismo").value;
+        const rawMonto = document.getElementById("monto").value;
+        const monto = parseMonto(rawMonto);
+        let moneda = tipo === 'nacional' ? 'MXN' : 'USD';
+        const simbolo = '$';
+
+        let valores;
+
+        const nacionales = [
+          { max: 100000, datos: { arbitraje1: 15000, arbitraje3: 29000, mediacion: 7000, conciliacion: 10000 } },
+          { max: 300000, datos: { arbitraje1: 20000, arbitraje3: 36000, mediacion: 10000, conciliacion: 14000 } },
+          { max: 700000, datos: { arbitraje1: 30000, arbitraje3: 48000, mediacion: 14000, conciliacion: 20000 } },
+          { max: 1000000, datos: { arbitraje1: 40000, arbitraje3: 64000, mediacion: 18000, conciliacion: 25000 } },
+          { max: 1200000, datos: { arbitraje1: 50000, arbitraje3: 80000, mediacion: 20000, conciliacion: 30000 } },
+          { max: 5000000, datos: { arbitraje1: 136000, arbitraje3: 236000, mediacion: 34400, conciliacion: 51600 } },
+          { max: 10000000, datos: { arbitraje1: 250000, arbitraje3: 380000, mediacion: 80000, conciliacion: 120000 } }
+        ];
+
+        const internacionales = [
+          { max: 50000, datos: { arbitraje1: 5000, arbitraje3: 10000, mediacion: 1800, conciliacion: 3100 } },
+          { max: 250000, datos: { arbitraje1: 10050, arbitraje3: 16550, mediacion: 2760, conciliacion: 4660 } },
+          { max: 500000, datos: { arbitraje1: 17500, arbitraje3: 27500, mediacion: 5600, conciliacion: 9200 } }
+        ];
+
+        const tabla = tipo === 'nacional' ? nacionales : internacionales;
+
+        for (const rango of tabla) {
+          if (monto <= rango.max) {
+            valores = rango.datos[mecanismo];
+            break;
+          }
+        }
+
+        if (!valores) {
+          alert("Aviso: El monto de disputa excede el límite calculado para este tipo de disputa.");
+          return;
+        }
+
+        const tarifaCentro = valores * 0.5;
+        const honorarios = valores * 0.5;
+        const viaticos = 0;
+
+        document.getElementById("cotizacion").innerHTML = `
+          <strong>Cotización estimada para tu disputa (${moneda}):</strong><br>
+          <table>
+            <tr><td>Monto de la disputa:</td><td>${simbolo}${monto.toLocaleString()}</td></tr>
+            <tr><td>Tarifa centro:</td><td>${simbolo}${tarifaCentro.toLocaleString()}</td></tr>
+            <tr><td>Honorarios:</td><td>${simbolo}${honorarios.toLocaleString()}</td></tr>
+            <tr><td>Viáticos:</td><td>${simbolo}0</td></tr>
+            <tr><td><strong>Total Attestyr:</strong></td><td><strong>${simbolo}${valores.toLocaleString()}</strong></td></tr>
+          </table>`;
+
+        const comp = valores * 2.5;
+        const ctx = document.getElementById('chart').getContext('2d');
+        if (window.chartRef) window.chartRef.destroy();
+        window.chartRef = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Tarifa centro', 'Honorarios', 'Viáticos', 'Total'],
+            datasets: [
+              {
+                label: 'Attestyr',
+                data: [tarifaCentro, honorarios, viaticos, valores],
+                backgroundColor: '#16395f'
+              },
+              {
+                label: 'Solución tradicional',
+                data: [comp * 0.4, comp * 0.4, comp * 0.2, comp],
+                backgroundColor: '#f5a623'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'bottom' },
+              tooltip: {
+                callbacks: {
+                  label: ctx => `${ctx.dataset.label}: ${simbolo}${ctx.raw.toLocaleString()}`
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    if (value >= 1_000_000) return value / 1_000_000 + 'M';
+                    if (value >= 1_000) return value / 1_000 + 'k';
+                    return value;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
