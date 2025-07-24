@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora de Ahorro Legal | Attestyr</title>
+  <meta name="description" content="Calcula cuánto puedes ahorrar con Attestyr resolviendo disputas en línea mediante mediación, conciliación y arbitraje 100% digitales.">
+  <meta name="keywords" content="attestyr, legaltech, mediación en línea, conciliación digital, arbitraje privado, ahorro legal, resolver disputas, legal tech México, contratos digitales">
+  <meta name="author" content="Attestyr SAPI">
+  <meta name="robots" content="index, follow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Calculadora de Ahorro Legal | Attestyr">
+  <meta property="og:description" content="Reduce costos y tiempo resolviendo tus conflictos legales de forma digital con Attestyr.">
+  <meta property="og:image" content="https://www.attestyr.com/icon.png">
+  <meta property="og:url" content="https://subdominio.attestyr.com">
+  <meta property="og:type" content="website">
+  <style>
+    body { font-family: 'Montserrat', sans-serif; padding: 20px; background: #f8f9fb; color: #111; margin: 0; }
+    h2 { color: #16395f; font-size: 22px; margin-bottom: 10px; }
+    label { font-weight: 600; margin-top: 10px; display: block; }
+    input, select {
+      font-size: 16px; padding: 10px; margin-bottom: 15px; width: 100%; max-width: 420px;
+      border: 1px solid #ccc; border-radius: 6px;
+    }
+    .button-primary {
+      background-color: #16395f; color: #fff; font-weight: 600; text-transform: uppercase;
+      border: none; border-radius: 6px; padding: 12px 20px; cursor: pointer;
+      margin-top: 10px; width: 100%; max-width: 420px;
+    }
+    .button-primary:hover { background-color: #0e2a48; }
+    .button-secondary {
+      background-color: #fff; color: #16395f; font-weight: 600; text-transform: uppercase;
+      border: 2px solid #16395f; border-radius: 6px; padding: 12px 20px;
+      cursor: pointer; margin-top: 20px; display: inline-block;
+      width: 100%; max-width: 420px; text-align: center; text-decoration: none;
+    }
+    #results { margin-top: 30px; }
+    .summary-table {
+      border: 1px solid #ccc; border-radius: 8px; padding: 16px;
+      background-color: #fff; margin-bottom: 30px; max-width: 420px;
+    }
+    .summary-table table { width: 100%; font-size: 15px; }
+    .summary-table td { padding: 6px 0; }
+    .summary-table td:last-child { text-align: right; font-weight: 600; }
+    canvas { max-width: 420px; background: #fff; border-radius: 10px; padding: 10px; }
+    .footnote { font-size: 12px; color: #666; margin-top: 20px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>Calculadora de ahorro con Attestyr</h2>
+
+  <label for="monto">Monto de disputa:</label>
+  <input type="text" id="monto" placeholder="Ej. 100,000" value="100,000">
+
+  <label for="tipo">Tipo de disputa:</label>
+  <select id="tipo">
+    <option value="nacional">Nacional (MXN)</option>
+    <option value="internacional">Internacional (USD)</option>
+  </select>
+
+  <label for="mecanismo">Mecanismo:</label>
+  <select id="mecanismo">
+    <option value="arbitraje1">Arbitraje (1 árbitro)</option>
+    <option value="arbitraje3">Arbitraje (3 árbitros)</option>
+    <option value="mediacion">Mediación</option>
+    <option value="conciliacion">Conciliación</option>
+  </select>
+
+  <button class="button-primary" onclick="calcular()">CALCULAR AHORRO</button>
+
+  <div id="results">
+    <div class="summary-table" id="cotizacion"></div>
+    <canvas id="chart" style="max-height: 320px;"></canvas>
+    <p class="footnote">* Costos estimados antes de IVA. Última actualización 2025. Ahorros típicos de hasta 80% y reducción de tiempo de resolución en 5x.</p>
+    <a href="https://www.attestyr.com/contact" target="_blank" class="button-secondary">SOLICITAR COTIZACIÓN FORMAL</a>
+  </div>
+
+  <script>
+    const tarifasNacionales = [
+      { min: 0, max: 100000, centro: 8000, honorarios1: 7000, honorarios3: 14000 },
+      { min: 100001, max: 300000, centro: 12000, honorarios1: 8000, honorarios3: 16000 },
+      { min: 300001, max: 700000, centro: 21000, honorarios1: 9000, honorarios3: 18000 },
+      { min: 700001, max: 1000000, centro: 28000, honorarios1: 12000, honorarios3: 24000 },
+      { min: 1000001, max: 1200000, centro: 35000, honorarios1: 15000, honorarios3: 30000 },
+      { min: 1200001, max: 5000000, centro: 86000, honorarios1: 50000, honorarios3: 100000 },
+      { min: 5000001, max: 10000000, centro: 185000, honorarios1: 65000, honorarios3: 130000 }
+    ];
+    const tarifasInternacionales = [
+      { min: 0, max: 50000, centro: 2500, honorarios1: 2500, honorarios3: 7500 },
+      { min: 50001, max: 250000, centro: 6800, honorarios1: 3250, honorarios3: 9750 },
+      { min: 250001, max: 500000, centro: 12500, honorarios1: 5000, honorarios3: 15000 }
+    ];
+
+    document.getElementById("monto").addEventListener("keypress", function(e) {
+      if (e.key === 'Enter') calcular();
+    });
+
+    function parseMonto(input) {
+      return parseInt(input.replace(/,/g, '').replace(/\./g, '')) || 0;
+    }
+
+    function calcular() {
+      const tipo = document.getElementById("tipo").value;
+      const mecanismo = document.getElementById("mecanismo").value;
+      const monto = parseMonto(document.getElementById("monto").value);
+      const moneda = tipo === 'nacional' ? 'MXN' : 'USD';
+      const simbolo = '$';
+      const arbitros = mecanismo === 'arbitraje3' ? 3 : 1;
+
+      let total = 0, centro = 0, honorarios = 0;
+
+      if (mecanismo.startsWith("arbitraje")) {
+        const tarifas = tipo === 'nacional' ? tarifasNacionales : tarifasInternacionales;
+        const tramo = tarifas.find(t => monto >= t.min && monto <= t.max);
+        if (!tramo) return alert("Monto fuera de rango para este mecanismo.");
+
+        centro = tramo.centro;
+        honorarios = arbitros === 3 ? tramo.honorarios3 : tramo.honorarios1;
+        total = centro + honorarios;
+      } else {
+        // Lógica antigua para mediación y conciliación
+        const tabla = tipo === 'nacional' ? {
+          mediacion: 10000, conciliacion: 14000
+        } : {
+          mediacion: 3000, conciliacion: 4800
+        };
+        total = tabla[mecanismo];
+        centro = total * 0.5;
+        honorarios = total * 0.5;
+      }
+
+      document.getElementById("cotizacion").innerHTML = `
+        <strong>Cotización estimada para tu disputa (${moneda}):</strong><br>
+        <table>
+          <tr><td>Monto de la disputa:</td><td>${simbolo}${monto.toLocaleString()}</td></tr>
+          <tr><td>Tarifa del centro:</td><td>${simbolo}${centro.toLocaleString()}</td></tr>
+          <tr><td>Honorarios:</td><td>${simbolo}${honorarios.toLocaleString()}</td></tr>
+          <tr><td><strong>Total Attestyr:</strong></td><td><strong>${simbolo}${total.toLocaleString()}</strong></td></tr>
+        </table>`;
+
+      const tradicional = total * 2.5;
+      const ctx = document.getElementById('chart').getContext('2d');
+      if (window.chartRef) window.chartRef.destroy();
+      window.chartRef = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Tarifa centro', 'Honorarios', 'Total'],
+          datasets: [
+            { label: 'Attestyr', data: [centro, honorarios, total], backgroundColor: '#16395f' },
+            { label: 'Solución tradicional', data: [tradicional * 0.4, tradicional * 0.4, tradicional], backgroundColor: '#f5a623' }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${simbolo}${ctx.raw.toLocaleString()}`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value >= 1000000 ? value / 1000000 + 'M' :
+                         value >= 1000 ? value / 1000 + 'k' : value;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
