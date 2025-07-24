@@ -115,7 +115,19 @@ function calcular() {
     if (!tramo) return alert("Monto fuera de rango para este mecanismo.");
 
     centro = tramo.centro;
-    honorarios = arbitros === 3 ? tramo.honorarios3 : tramo.honorarios1;
+
+    if (tipo === 'nacional') {
+      // Nacional: honorarios3 = árbitros adicionales (NO total)
+      honorarios = arbitros === 3
+        ? tramo.honorarios1 + tramo.honorarios3
+        : tramo.honorarios1;
+    } else {
+      // Internacional: honorarios3 ya es total
+      honorarios = arbitros === 3
+        ? tramo.honorarios3
+        : tramo.honorarios1;
+    }
+
     total = centro + honorarios;
   } else {
     const tabla = tipo === 'nacional' ? {
@@ -130,7 +142,9 @@ function calcular() {
 
   const viaticosAttestyr = 0;
   const tradicional = total * 2.5;
-  const viaticosCompetencia = tipo === 'internacional' ? tradicional * 0.25 : tradicional * 0.20;
+  const viaticosCompetencia = tipo === 'internacional'
+    ? tradicional * 0.25
+    : tradicional * 0.20;
 
   document.getElementById("cotizacion").innerHTML = `
     <strong>Cotización estimada para tu disputa (${moneda}):</strong><br>
