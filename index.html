@@ -130,14 +130,41 @@ function calcular() {
 
     total = centro + honorarios;
   } else {
-    const tabla = tipo === 'nacional' ? {
-      mediacion: 10000, conciliacion: 14000
-    } : {
-      mediacion: 3000, conciliacion: 4800
+  if (mecanismo === 'mediacion' || mecanismo === 'conciliacion') {
+  let tabla, tarifaCentro;
+
+  if (tipo === 'nacional') {
+    // valores totales y tarifas extraídos directamente de la tabla real
+    const tablaNacional = [
+      { max: 100000, mediacion: [7000, 3500], conciliacion: [10000, 4000] },
+      { max: 300000, mediacion: [10000, 4000], conciliacion: [14000, 5000] },
+      { max: 700000, mediacion: [14000, 5000], conciliacion: [20000, 6000] },
+      { max: 1000000, mediacion: [18000, 6000], conciliacion: [25000, 7500] },
+      { max: 1200000, mediacion: [20000, 7000], conciliacion: [30000, 10000] },
+      { max: 5000000, mediacion: [34400, 11500], conciliacion: [51600, 23000] },
+      { max: 10000000, mediacion: [80000, 20000], conciliacion: [120000, 33000] }
+    ];
+
+    const fila = tablaNacional.find(r => monto <= r.max);
+    if (!fila) return alert("Monto fuera de rango para este mecanismo.");
+
+    const datos = fila[mecanismo];
+    centro = datos[0];
+    honorarios = datos[1];
+    total = centro; // total ya los incluye
+
+  } else {
+    // internacional: valores separados
+    const tablaInternacional = {
+      mediacion: [3000, 1500],
+      conciliacion: [4800, 2000]
     };
-    total = tabla[mecanismo];
-    centro = total * 0.5;
-    honorarios = total * 0.5;
+    const datos = tablaInternacional[mecanismo];
+    centro = datos[0];
+    honorarios = datos[1];
+    total = centro + honorarios;
+  }
+}
   }
 
   const viaticosAttestyr = 0;
