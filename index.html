@@ -130,38 +130,43 @@ function calcular() {
 
     total = centro + honorarios;
   } else {
-  if (mecanismo === 'mediacion' || mecanismo === 'conciliacion') {
+ if (mecanismo === 'mediacion' || mecanismo === 'conciliacion') {
   let tabla, tarifaCentro;
 
   if (tipo === 'nacional') {
-    // valores totales y tarifas extraídos directamente de la tabla real
     const tablaNacional = [
-      { max: 100000, mediacion: [7000, 3500], conciliacion: [10000, 4000] },
-      { max: 300000, mediacion: [10000, 4000], conciliacion: [14000, 5000] },
-      { max: 700000, mediacion: [14000, 5000], conciliacion: [20000, 6000] },
-      { max: 1000000, mediacion: [18000, 6000], conciliacion: [25000, 7500] },
-      { max: 1200000, mediacion: [20000, 7000], conciliacion: [30000, 10000] },
-      { max: 5000000, mediacion: [34400, 11500], conciliacion: [51600, 23000] },
-      { max: 10000000, mediacion: [80000, 20000], conciliacion: [120000, 33000] }
+      { max: 100000, mediacion: [3500, 3500], conciliacion: [6000, 4000] },
+      { max: 300000, mediacion: [6000, 4000], conciliacion: [9000, 5000] },
+      { max: 700000, mediacion: [9000, 5000], conciliacion: [14000, 6000] },
+      { max: 1000000, mediacion: [12000, 6000], conciliacion: [17500, 7500] },
+      { max: 1200000, mediacion: [13000, 7000], conciliacion: [20000, 10000] },
+      { max: 5000000, mediacion: [22900, 11500], conciliacion: [28600, 23000] },
+      { max: 10000000, mediacion: [60000, 20000], conciliacion: [87000, 33000] }
     ];
-
     const fila = tablaNacional.find(r => monto <= r.max);
     if (!fila) return alert("Monto fuera de rango para este mecanismo.");
-
     const datos = fila[mecanismo];
     centro = datos[0];
     honorarios = datos[1];
-    total = centro; // total ya los incluye
+    total = centro + honorarios;
 
   } else {
-    // internacional: valores separados
     const tablaInternacional = {
-      mediacion: [3000, 1500],
-      conciliacion: [4800, 2000]
+      mediacion: [
+        { max: 50000, centro: 1000, honorarios: 800 },
+        { max: 250000, centro: 1720, honorarios: 1040 },
+        { max: 500000, centro: 4000, honorarios: 1600 }
+      ],
+      conciliacion: [
+        { max: 50000, centro: 1500, honorarios: 1600 },
+        { max: 250000, centro: 2580, honorarios: 2080 },
+        { max: 500000, centro: 6000, honorarios: 3200 }
+      ]
     };
-    const datos = tablaInternacional[mecanismo];
-    centro = datos[0];
-    honorarios = datos[1];
+    const fila = tablaInternacional[mecanismo].find(r => monto <= r.max);
+    if (!fila) return alert("Monto fuera de rango para este mecanismo.");
+    centro = fila.centro;
+    honorarios = fila.honorarios;
     total = centro + honorarios;
   }
 }
